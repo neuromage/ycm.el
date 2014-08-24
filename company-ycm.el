@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2014  Ajay Gopinathan
 
-;; Author: Ajay Gopinathan <ajaygopinathan@ajaygopinathan-macbookpro.roam.corp.google.com>
+;; Author: Ajay Gopinathan <ajay@gopinathan.net>
 ;; Keywords: abbrev
 
 ;; This program is free software; you can redistribute it and/or modify
