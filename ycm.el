@@ -85,7 +85,7 @@ emacs is idle.")
     (let ((command `("ycmd"
                      "*ycmd-output*"
                      "python"
-                     ycm-server-directory
+                     ,ycm-server-directory
                      ,(concat "--options_file=" options-file))))
 
       (apply #'start-process command))
