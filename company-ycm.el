@@ -1,9 +1,10 @@
-;;; company-ycm.el --- company-ycm                   -*- lexical-binding: t; -*-
+;;; company-ycm.el --- company-ycm
 
 ;; Copyright (C) 2014  Ajay Gopinathan
 
 ;; Author: Ajay Gopinathan <ajay@gopinathan.net>
 ;; Keywords: abbrev
+;; Package-Requires: ((ycm "0.1"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
