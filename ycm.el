@@ -1,4 +1,4 @@
-;;; ycm.el --- Emacs client for the YouCompleteMe auto-completion server.  -*- lexical-binding: t; -*-
+;;; ycm.el --- Emacs client for the YouCompleteMe auto-completion server.
 
 ;; Copyright (C) 2014  Ajay Gopinathan
 
