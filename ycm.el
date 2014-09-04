@@ -164,9 +164,9 @@ the callback format as specified in request.el."
      `(("Content-Type" . "application/json")
        ("X-Ycm-Hmac" . ,hmac-header))
 
-     :parser 'json-read
+     :parser (lambda() (ignore-errors (json-read)))
      :success success-fn
-     :error error-fn
+     :error (lambda() nil)
     )))
 
 (defun ycm--get-filetypes ()
