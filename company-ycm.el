@@ -39,6 +39,7 @@
   (require 'company))
 (require 'ycm)
 
+;;;###autoload
 (defun company-ycm (command &optional arg &rest ignored)
   (pcase command
     (`prefix (and (memq major-mode ycm-modes)
