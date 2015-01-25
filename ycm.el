@@ -274,6 +274,12 @@ the callback format as specified in request.el."
   (setq ycm--server-port nil)
   (ycm--stop-server))
 
+(defun ycm-restart ()
+  "Restart the YCMD daemon."
+  (interactive)
+  (ycm-shutdown)
+  (ycm-startup))
+
 (defun ycm--parse-insertions (completions)
   "Parses insertion candidates from COMPLETIONS.
 
