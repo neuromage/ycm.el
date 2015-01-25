@@ -103,12 +103,11 @@ emacs is idle.")
   (unless ycm--server-port
     (unless (process-status "ycmd")
       (error "ERROR getting ycmd port. Process not running."))
-    (let* ((logs (with-current-buffer "*ycmd-output*"
-                   (buffer-string)))
-           (matched (string-match "serving on http://127[.]0[.]0[.]1:\\\([0-9]+\\\)" logs))
-           (port (match-string 1 logs)))
-      (setq ycm--server-port port)))
-  (concat ycm--server-host ":" ycm--server-port))
+    (with-current-buffer "*ycmd-output*"
+      (goto-char (point-max))
+      (re-search-backward "serving on http://127[.]0[.]0[.]1:\\\([0-9]+\\\)")
+      (setq ycm--server-port (match-string-no-properties 1))))
+      (concat ycm--server-host ":" ycm--server-port))
 
 (defun ycm--generate-secret ()
   "Compute a random secret key for HMAC authentication."
@@ -272,6 +271,7 @@ the callback format as specified in request.el."
   (when ycm--signal-file-ready-to-parse-timer
     (cancel-timer ycm--signal-file-ready-to-parse-timer))
   (setq ycm--secret nil)
+  (setq ycm--server-port nil)
   (ycm--stop-server))
 
 (defun ycm--parse-insertions (completions)
