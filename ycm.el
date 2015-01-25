@@ -26,8 +26,11 @@
 ;;; Code:
 
 (require 'cl-lib)
-(require 'request)
 (require 'json)
+(require 'f)
+
+(add-to-list 'load-path (f-join (f-dirname (f-this-file)) "request"))
+(require 'ycm-http-request)
 
 ;; (setq request-log-level `debug)
 ;; (setq request-message-level `debug)
@@ -155,7 +158,7 @@ the callback format as specified in request.el."
          (hmac-header (base64-encode-string
                        (ycm--generate-hmac ycm--secret request-in-json) t)))
 
-    (request
+    (ycm-http-request
      (concat (file-name-as-directory (ycm--server-address)) path)
      :type "POST"
      :data request-in-json
@@ -165,8 +168,7 @@ the callback format as specified in request.el."
 
      :parser (lambda() (ignore-errors (json-read)))
      :success success-fn
-     :error (lambda() nil)
-    )))
+     :error error-fn)))
 
 (defun ycm--get-filetypes ()
   "Get a list of filetypes that apply to the current buffer."
