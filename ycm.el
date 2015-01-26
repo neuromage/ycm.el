@@ -26,6 +26,7 @@
 ;;; Code:
 
 (require 'cl-lib)
+(require 'flycheck)
 (require 'json)
 (require 'f)
 
@@ -219,13 +220,55 @@ the callback format as specified in request.el."
           (cons "filepath" (buffer-file-name))
           (cons "file_data" (ycm--build-file-data)))))
 
-(defun ycm--signal-file-ready-to-parse ()
+(defun ycm--build-flycheck-error (item)
+  "Build a flycheck error from ITEM, which should be an a-list
+produced by parsing a single JSON object representing parse
+errors as returned by YCMD."
+  (let* ((kind (assoc-default 'kind item))
+         (msg (assoc-default 'text item))
+         (location (assoc-default 'location item))
+         (col (assoc-default 'column_num location))
+         (line (assoc-default 'line_num location))
+         (filepath (assoc-default 'filepath location))
+         (level (cond
+                    ((string= kind "ERROR") 'error)
+                    ((string= kind "WARNING") 'warning)
+                    ((string= kind "INFO") 'info)
+                    (t (error "Unknown level %S : %S" kind item) ))))
+
+    (flycheck-error-new-at line col level msg)))
+
+(defun ycm--signal-file-ready-to-parse (success-fn &optional error-fn)
   "Signals to YCMD the current buffer is ready to be parsed."
   (when (memq major-mode ycm-modes)
     (let* ((base-request (ycm--build-request-base))
            (request (push (cons 'event_name "FileReadyToParse") base-request))
+           (error-parser (or error-fn
+                             (function*
+                              (lambda (&key data &allow-other-keys)
+                                (let* ((err-msg (assoc-default 'message data)))
+                                  (error err-msg))))))
            (path "event_notification"))
-      (ycm--post path request))))
+      (ycm--post path request :success-fn success-fn :error-fn error-fn))))
+
+(defun ycm--start-flycheck-parse (checker callback)
+  "Start parsing the file for errors using YCMD. Then call
+CALLBACK with the list of flycheck errors constructed."
+  (lexical-let* ((cb callback)
+                 (parser (function*
+                  (lambda (&key data &allow-other-keys)
+                    (let* ((errors (mapcar #'ycm--build-flycheck-error data)))
+                      (funcall cb 'finished (delq nil errors))))))
+                 (error-parser (function*
+                  (lambda (&key data &allow-other-keys)
+                    (let* ((err-msg (assoc-default 'message data)))
+                      (funcall cb 'errored err-msg))))))
+    (ycm--signal-file-ready-to-parse parser error-parser)))
+
+(flycheck-define-generic-checker 'ycm-checker
+  "A flycheck checker using YCMD."
+  :start #'ycm--start-flycheck-parse
+  :modes ycm-modes)
 
 (defun ycm--generate-tmpfilename ()
   "Generate a random temporary file under tmp."
@@ -241,8 +284,7 @@ the callback format as specified in request.el."
     (puthash "hmac_secret" (base64-encode-string ycm--secret t) options)
     ;; Other options go here.
     (with-temp-file tmpfile
-      (insert (json-encode options))))
-  )
+      (insert (json-encode options)))))
 
 (defun ycm-startup ()
   "Necessary initialization stuff."
@@ -262,7 +304,7 @@ the callback format as specified in request.el."
   (unless ycm--signal-file-ready-to-parse-timer
     (setq ycm--signal-file-ready-to-parse-timer
           (run-with-idle-timer
-           2 t (lambda () (ycm--signal-file-ready-to-parse)))))
+           2 t (lambda () (ycm--signal-file-ready-to-parse nil)))))
 
   ;; Clean up when emacs exits.
   (add-hook 'kill-emacs-hook (lambda () (ycm-shutdown))))
