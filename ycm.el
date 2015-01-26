@@ -350,9 +350,16 @@ server response."
                    (lambda (&key data &allow-other-keys)
                      (let* ((completions (assoc-default 'completions data))
                             (insertions (ycm--parse-insertions completions)))
-                       (funcall insertions-callback insertions))))))
+                       (funcall insertions-callback insertions)))))
+                 (error-callback
+                  (function*
+                   (lambda (&key data &allow-other-keys)
+                     (let ((err-msg (assoc-default 'message data)))
+                       (message "YCMD: %S" err-msg))))))
 
-    (ycm--post path request :success-fn success-callback)))
+    (ycm--post path request
+               :success-fn success-callback
+               :error-fn error-callback)))
 
 (provide 'ycm)
 
