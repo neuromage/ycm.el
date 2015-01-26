@@ -79,6 +79,11 @@ extra conf file in YCM-OPTIONS-FILE. "
 (defvar ycm--secret nil
   "HMAC authentication secret currently in use.")
 
+(defvar ycm-should-set-idle-timer nil
+  "Whether ycm should set an idle timer to let YCMD parse open
+buffers every 2 seconds. This should be set to nil if using
+Flycheck.")
+
 (defvar ycm--signal-file-ready-to-parse-timer nil
   "The timer used to ask ycm to parse a file every 2 seconds when
 emacs is idle.")
@@ -270,6 +275,13 @@ CALLBACK with the list of flycheck errors constructed."
   :start #'ycm--start-flycheck-parse
   :modes ycm-modes)
 
+(defun ycm-setup-flycheck ()
+  "Set up Flycheck to use 'ycm-checker."
+  (when ycm--signal-file-ready-to-parse-timer
+    (cancel-timer ycm--signal-file-ready-to-parse-timer))
+  (setq ycm-should-set-idle-timer nil)
+  (add-to-list 'flycheck-checkers 'ycm-checker))
+
 (defun ycm--generate-tmpfilename ()
   "Generate a random temporary file under tmp."
   (concat "/tmp/" (md5 (number-to-string (random t)))))
@@ -301,10 +313,11 @@ CALLBACK with the list of flycheck errors constructed."
                    (ycm--load-extra-conf-file ycm--extra-conf-file))))
 
   ;; Set up timer to signal file ready to parse.
-  (unless ycm--signal-file-ready-to-parse-timer
-    (setq ycm--signal-file-ready-to-parse-timer
-          (run-with-idle-timer
-           2 t (lambda () (ycm--signal-file-ready-to-parse nil)))))
+  (when ycm-should-set-idle-timer
+    (unless ycm--signal-file-ready-to-parse-timer
+      (setq ycm--signal-file-ready-to-parse-timer
+            (run-with-idle-timer
+             2 t (lambda () (ycm--signal-file-ready-to-parse nil))))))
 
   ;; Clean up when emacs exits.
   (add-hook 'kill-emacs-hook (lambda () (ycm-shutdown))))
