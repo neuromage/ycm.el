@@ -197,7 +197,9 @@ the callback format as specified in request.el."
   "Returns a list of current buffers with YCM enabled major modes."
   (cl-remove-if-not (lambda (buf)
                       (with-current-buffer buf
-                        (memq major-mode ycm-modes)))
+                        (and
+                         (memq major-mode ycm-modes)
+                         (buffer-modified-p))))
                     (buffer-list)))
 
 (defun ycm--build-file-data-for-buffer (buf)
