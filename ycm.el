@@ -124,8 +124,9 @@ emacs is idle.")
     (secure-hash 'sha256 ran)))
 
 
-(defun ycm--generate-hmac (key text)
-  "Generates a HMAC given the KEY and TEXT."
+(defun ycm--hmac-encode (key text)
+  "HMAC encodes the given text in TEXT with the secret key in
+KEY."
   (let* ((block-size 64)
         (opad (make-string block-size ?\x5c))
         (ipad (make-string block-size ?\x36))
@@ -150,7 +151,19 @@ emacs is idle.")
     (let* ((inner (concat ipad text))
            (inner-digest (secure-hash 'sha256 inner nil nil t))
            (outer (concat opad inner-digest)))
-      (secure-hash 'sha256 outer nil nil nil))))
+      (secure-hash 'sha256 outer nil nil t))))
+
+(defun ycm--generate-hmac-header (key method path body)
+  "Generates a HMAC header given the secret in KEY, the http
+method used in METHOD, the request path in PATH and the request
+body in BODY. Note that PATH is assumed to not contain the
+leading slash."
+  (let* ((hmac-method (ycm--hmac-encode key method))
+         (hmac-path (ycm--hmac-encode key (concat "/" path)))
+         (hmac-body (ycm--hmac-encode key body)))
+
+    (ycm--hmac-encode key (concat hmac-method hmac-path hmac-body))))
+
 
 (cl-defun ycm--post (path request-data &key success-fn error-fn)
   "Send a POST request to the YCMD server.
@@ -161,8 +174,10 @@ called if specified.  If the server responds with an error, the
 callback ERROR-FN is called instead. Both callbacks must follow
 the callback format as specified in request.el."
   (let* ((request-in-json (json-encode request-data))
-         (hmac-header (base64-encode-string
-                       (ycm--generate-hmac ycm--secret request-in-json) t)))
+         (hmac-header
+          (base64-encode-string
+           (ycm--generate-hmac-header ycm--secret "POST" path request-in-json)
+           t)))
 
     (ycm-http-request
      (concat (file-name-as-directory (ycm--server-address)) path)
