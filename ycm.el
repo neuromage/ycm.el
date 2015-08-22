@@ -210,12 +210,14 @@ the callback format as specified in request.el."
 
 (defun ycm--current-ycm-buffers ()
   "Returns a list of current buffers with YCM enabled major modes."
-  (cl-remove-if-not (lambda (buf)
-                      (with-current-buffer buf
-                        (and
-                         (memq major-mode ycm-modes)
-                         (buffer-modified-p))))
-                    (buffer-list)))
+  (let ((curr-buffer-name (buffer-name (current-buffer))))
+    (cl-remove-if-not (lambda (buf)
+                        (or (string= (buffer-name buf) curr-buffer-name)
+                            (with-current-buffer buf
+                              (and
+                               (memq major-mode ycm-modes)
+                               (buffer-modified-p)))))
+                        (buffer-list))))
 
 (defun ycm--build-file-data-for-buffer (buf)
   "Given the buffer BUF, builds the file data for it."
